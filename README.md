@@ -34,6 +34,8 @@ In a single real feature, the gates flagged — in code another agent wrote and 
 
 Every one of those passes a green build. None survived an independent review + runtime check.
 
+**Don't take my word for it — [`change-delivery-demo`](https://github.com/KhalifaGad/change-delivery-demo)** is a tiny repo you can clone in 60 seconds: a green-building TypeScript app with two of these failure modes *planted* — a dead look-alike component and a build-green-but-broken filter — plus a [real reviewer + QA run](https://github.com/KhalifaGad/change-delivery-demo/blob/main/TRANSCRIPT.md) catching both. Watch it happen instead of trusting the story above.
+
 ---
 
 ## How it works
