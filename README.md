@@ -36,6 +36,8 @@ Every one of those passes a green build. None survived an independent review + r
 
 **Don't take my word for it — [`change-delivery-demo`](https://github.com/KhalifaGad/change-delivery-demo)** is a tiny repo you can clone in 60 seconds: a green-building TypeScript app with two of these failure modes *planted* — a dead look-alike component and a build-green-but-broken filter — plus a [real reviewer + QA run](https://github.com/KhalifaGad/change-delivery-demo/blob/main/TRANSCRIPT.md) catching both. Watch it happen instead of trusting the story above.
 
+![change-delivery's reviewer and QA gates catching both planted bugs in a green build](https://github.com/KhalifaGad/change-delivery-demo/raw/main/docs/demo.gif)
+
 ---
 
 ## How it works
