@@ -4,17 +4,17 @@
 npx skills add KhalifaGad/change-delivery
 ```
 
-**An agent skill that turns a change request into execution-ready delivery artifacts — and verifies the work adversarially as it ships.**
+**An agent skill for landing large or refactor changes reliably — it shapes the brief, plans the phases, and drives execution through independent review/QA gates, so an agent can't quietly ship broken or half-applied work.**
 
 `change-delivery` is a methodology, not a wrapper. It takes a business change, a technical change, or a refactor and drives it through a disciplined pipeline: a shaped **brief**, a brownfield **implementation plan**, an execution **task breakdown**, and **execution / reviewer / QA prompts** — then runs the work in **gated phases** where an independent reviewer and QA must approve before advancing.
 
-It exists because LLMs are very good at producing changes that *look* right — compile, pass type-checks, read plausibly — and confidently ship bugs a second pair of eyes would have caught. This skill builds that second (and third) pair of eyes into the process, plus the grounding rules that stop an agent from inventing or editing the wrong thing.
+It exists for the changes that are too big to one-shot: multi-phase refactors, migrations, and features that touch many files and need sequencing. Hand one of those to an agent in a single pass and it will often produce something that *looks* right — compiles, type-checks, reads plausibly — while quietly shipping broken or half-applied work. change-delivery decomposes the change into gated phases and builds an independent second (and third) pair of eyes into each one, plus grounding rules that stop an agent from inventing or editing the wrong thing — so the change actually lands.
 
 ---
 
 ## Why it's different
 
-Most "AI dev workflow" prompts help you *plan*. This one is built around **adversarial verification** and **anti-hallucination grounding**:
+Most "AI dev workflow" prompts help you *plan*. change-delivery is built to *land the change* — and the reason you can trust it to is **adversarial verification** and **anti-hallucination grounding** baked into every phase:
 
 - **Separation of roles.** The agent that writes the code never reviews or QAs it. A fresh, independent agent re-reads the change cold and tries to break it. Independence is the bug-catching mechanism — self-review rubber-stamps.
 - **Grounding rules.** Read before reference, evidence over assertion, and two rules learned the hard way:
@@ -22,9 +22,9 @@ Most "AI dev workflow" prompts help you *plan*. This one is built around **adver
   - **Build green is not "works"** — a passing build/test/lint proves it compiles, not that it behaves. User-facing changes require a *runtime* check, covering the reset/empty/failure paths, not just the happy path.
 - **Gated execution with recovery.** Phases advance only on reviewer + QA approval; a progress file externalizes state so work survives crashes, stalls, and hand-offs.
 
-## It catches real bugs
+## Why you can trust it
 
-In a single real feature, the gates flagged — in code another agent wrote and was confident about:
+The gates aren't theater. While delivering real multi-phase changes, the independent review/QA step repeatedly caught work a green build would have shipped — caught *because* the change ran through the process instead of a single pass:
 
 - a composite **database index the query planner would never use** (a column-to-column comparison a B-tree can't serve) — pure write-cost, no read benefit;
 - an entire **phase implemented against dead code** — a component that compiled and type-checked but was never mounted on a route;
@@ -32,13 +32,19 @@ In a single real feature, the gates flagged — in code another agent wrote and 
 - a **"Reset" button and a date selector that silently did nothing**, due to collapsed state-setter calls racing each other;
 - a **count badge that under-counted**, because two hand-maintained status lists had drifted apart.
 
-Every one of those passes a green build. None survived an independent review + runtime check.
+Every one passed a green build. None survived an independent review + runtime check. That's the guardrail layer doing its job mid-delivery — the reason you can hand it a six-phase refactor and trust what comes out.
 
-**Don't take my word for it — [`change-delivery-demo`](https://github.com/KhalifaGad/change-delivery-demo)** is a tiny repo you can clone in 60 seconds: a green-building TypeScript app with two of these failure modes *planted* — a dead look-alike component and a build-green-but-broken filter — plus a [real reviewer + QA run](https://github.com/KhalifaGad/change-delivery-demo/blob/main/TRANSCRIPT.md) catching both. Watch it happen instead of trusting the story above.
+### See a guardrail fire
 
-![change-delivery's reviewer and QA gates catching both planted bugs in a green build](https://github.com/KhalifaGad/change-delivery-demo/raw/main/docs/demo.gif)
+[`change-delivery-demo`](https://github.com/KhalifaGad/change-delivery-demo) is a focused look at *just* the verification layer: a tiny green-building app with two failure modes planted — a dead look-alike component and a build-green-but-broken filter — and a [real reviewer + QA run](https://github.com/KhalifaGad/change-delivery-demo/blob/main/TRANSCRIPT.md) catching both. It's one guardrail firing in isolation — not the whole job, but the part you can watch in 60 seconds.
+
+![change-delivery's review/QA gate rejecting a green build that hid two bugs](https://github.com/KhalifaGad/change-delivery-demo/raw/main/docs/demo.gif)
 
 ---
+
+## Battle-tested
+
+This isn't a toy prompt. The gated-delivery method behind `change-delivery` was forged over ~10 weeks of real product work — landing multi-phase changes like a seller-portal extraction refactor and a database-architecture hardening across two production codebases, through 100+ independent review/QA passes. The skill is the distilled, reusable form of that process.
 
 ## How it works
 
