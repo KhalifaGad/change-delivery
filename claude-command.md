@@ -5,6 +5,7 @@ description: Shape a business, technical, or refactor change into a strong brief
 Use the `change-delivery` workflow. Read these files (paths are relative to this skill's own directory):
 
 - `SKILL.md`
+- `references/grounding-rules.md`
 - `references/artifact-standards.md`
 - `references/prompt-generation.md`
 
@@ -20,6 +21,8 @@ Follow the workflow exactly:
 2. Create or tighten the implementation plan.
 3. Create or tighten the execution tasks.
 4. Generate execution, reviewer, and QA prompts when the artifacts are ready.
+
+When the user asks to start execution, also read `references/execution-orchestration.md` for the orchestrator steps and recovery rules, and track state with `references/progress-template.md`.
 
 Behavior rules:
 

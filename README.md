@@ -158,11 +158,14 @@ change-delivery/
 ├── SKILL.md                         # the skill (entry point)
 ├── claude-command.md                # optional slash-command launcher
 ├── references/
+│   ├── grounding-rules.md           # canonical anti-hallucination rules (single source)
 │   ├── artifact-standards.md        # what a strong brief/plan/tasks/prompt looks like
 │   ├── business-change.md           # business-change emphasis + questions
 │   ├── technical-change.md          # technical-change emphasis + feature-flag heuristic
 │   ├── refactor-change.md           # refactor emphasis (preserved behavior)
-│   ├── prompt-generation.md         # execution/reviewer/QA prompt shapes + grounding rules
+│   ├── prompt-generation.md         # execution/reviewer/QA prompt shapes
+│   ├── execution-orchestration.md   # orchestrator steps + recovery/stall/blocker
+│   ├── progress-template.md         # fillable progress file (evidence slots)
 │   └── rollback-approaches.md       # per-layer rollback options
 ├── README.md
 └── LICENSE

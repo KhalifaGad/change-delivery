@@ -159,14 +159,13 @@ But these are examples, not a fixed required list for every project.
 
 ## Topology-change doc sync
 
-If the change alters app boundaries, host ownership, deployment topology, or project structure, final doc sync should usually include:
+If the change alters app boundaries, host ownership, deployment topology, or project structure, final doc sync should usually include every source-of-truth doc the repo maintains, for example:
 
-- root `AGENTS.md`
-- `PROJECT_CONTEXT.md`
-- affected app-level `AGENTS.md`
+- root agent/context docs (e.g. `AGENTS.md` or a project-context doc)
+- affected app-level agent/context docs
 - affected README or local setup docs
 
-Do not treat `PROJECT_CONTEXT.md` as the only required doc update for topology changes.
+Do not treat any single context file as the only required doc update for topology changes — sync all the ones this repo actually keeps.
 
 ## Review checklist
 
@@ -183,7 +182,7 @@ Use this checklist when reviewing plans or tasks:
 
 ### Grounding checks (anti-hallucination)
 
-Additionally, check for hallucination signals:
+These are the review-time application of the canonical grounding rules in `references/grounding-rules.md` (see there for the full definitions). Additionally, check for hallucination signals:
 
 - Do all file paths in the artifact actually exist in the repo?
 - Is every file in scope actually **live** — reachable from a route / registered module / entry point — and not dead code that merely exists? (A whole phase can target a dead look-alike file and pass every other check.)

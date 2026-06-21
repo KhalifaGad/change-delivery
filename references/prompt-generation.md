@@ -87,38 +87,13 @@ The QA prompt should include:
 
 ## Grounding rules for all prompts
 
-Every generated prompt (execution, reviewer, QA) must include these anti-hallucination rules:
+Every generated execution/reviewer/QA prompt must carry the anti-hallucination grounding rules. Do not restate them here — they are canonical in `references/grounding-rules.md`. Embed the universal rules from that file verbatim into each prompt, then apply the per-role emphasis from its "Embedding these rules into prompts" section:
 
-### Execution prompt grounding rules
+- **Execution** — *read before reference* and *"edit the live file, not a look-alike"* (reachability), plus no invented paths, no assumed patterns, and show-your-work evidence in the progress file.
+- **Reviewer** — *independent read* of every changed file and *reachability* verification, plus checking every "tests pass" claim against progress-file evidence and flagging unsupported claims.
+- **QA** — *independent runs* and *runtime verification* across reset/empty/failure paths (build-green is not "works"), plus an independent regression run and rejection of any unevidenced step.
 
-Include in every execution prompt:
-
-- **Read before write**: Before modifying any file, read its current contents. Do not assume file structure from the plan alone.
-- **Edit the live file, not a look-alike**: Before changing a target, confirm it is reachable from an entry point (route / registered module / `main`). A file existing is not proof it is used; two similarly-named files (`Foo` vs `redesign/Foo`) is a classic trap. Zero importers and not itself an entry point ⇒ stop and flag it instead of editing it.
-- **Read before reference**: Do not reference files, functions, or contracts in the progress file or reports unless you have read them in this session.
-- **Show your work**: When updating the progress file, include the actual command run and a summary of its output. “Tests pass” without output is not acceptable.
-- **No invented paths**: If a file path from the plan does not exist, report it as a finding. Do not create files at assumed paths without verifying the plan intended it.
-- **No assumed patterns**: If the plan says “follow the existing pattern in X,” read X first. Do not infer patterns from training data.
-
-### Reviewer prompt grounding rules
-
-Include in every reviewer prompt:
-
-- **Independent read**: Read every changed file yourself. Do not rely on the execution agent's description of what changed.
-- **Verify claims**: If the execution agent claims tests pass, check the progress file for evidence (command + output). If no evidence exists, flag it.
-- **Check file existence**: Verify that all file paths referenced in the execution agent's report actually exist in the repo.
-- **Check reachability**: Verify the changed files are live — reachable from a route / registered module / entry point. A change to dead code compiles, passes review on its own terms, and ships nothing. Flag any edited file you cannot trace to an entry point.
-- **Flag unsupported claims**: If the execution report references behavior, contracts, or patterns without file:line evidence, flag it as unverified.
-
-### QA prompt grounding rules
-
-Include in every QA prompt:
-
-- **Run independently**: Run verification commands yourself. Do not accept the execution agent's claimed output.
-- **Runtime, not just build**: A green build / tests / lint is necessary but not sufficient for a user-facing change. Exercise the actual behavior at runtime and observe the result, covering reset/empty/failure paths — not only the happy path. If you cannot run it, mark the runtime check as an OPEN gap; do not approve on build-green alone.
-- **Verify evidence**: Check that the progress file contains actual command output, not just status labels.
-- **Regression check**: Run the project's existing test suite (or the relevant subset) independently, not just the tests the execution agent says it ran.
-- **Flag missing evidence**: If any verification step in the tasks file has no corresponding evidence in the progress file, reject the phase.
+Keeping one canonical copy is the point: when a rule changes it changes in one place, and every generated prompt inherits it.
 
 ## Prompt writing principles
 

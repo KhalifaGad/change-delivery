@@ -1,6 +1,6 @@
 ---
 name: "change-delivery"
-description: "Use when a user needs help turning a business change, technical change, or refactor into execution-ready delivery artifacts: a shaped brief, an implementation plan, a task breakdown, and execution/reviewer/QA prompts."
+description: "Use when a user needs help turning a business change, technical change, or refactor into execution-ready delivery artifacts (shaped brief, implementation plan, task breakdown) and/or running the implementation through gated, independently reviewed and QA'd multi-agent execution with anti-hallucination grounding. Not for trivial one-file fixes unless the user explicitly wants the full workflow."
 ---
 
 # Change Delivery
@@ -19,7 +19,7 @@ This skill is collaborative and standards-enforcing. It should challenge weak in
 Use this skill when the user wants any of the following:
 
 - help shaping a change before implementation
-- a strong planning prompt for Codex
+- a strong planning prompt for a coding agent
 - a brownfield implementation plan
 - a task-split artifact for subagent execution
 - execution, reviewer, or QA prompts
@@ -38,7 +38,7 @@ Gated multi-agent execution is powerful but expensive: a single feature can spaw
 Cost knobs that don't sacrifice the method:
 - Collapse reviewer+QA into one agent for a phase when risk is low.
 - Gate only the phases that carry real risk; let mechanical phases self-verify against the grounding rules.
-- Prefer fewer, larger-context agents over many tiny ones for sequential work — it also shrinks the mid-task-stall surface (see Execution recovery).
+- Prefer fewer, larger-context agents over many tiny ones for sequential work — it also shrinks the mid-task-stall surface (see stall recovery in `references/execution-orchestration.md`).
 
 Do not silently run Full mode on a change that warranted Lite — the user pays for it.
 
@@ -106,6 +106,7 @@ Always also load:
 
 - `references/artifact-standards.md`
 - `references/prompt-generation.md`
+- `references/grounding-rules.md`
 
 ## Project concern derivation
 
@@ -297,74 +298,22 @@ Use this test:
 
 If not, keep shaping through questions and review instead of writing too early.
 
+The `docs/plans/YYYY-MM-DD-<topic>...` paths used throughout this skill are defaults. If the repo already has an established location or naming convention for plan/design docs, detect it and follow that instead — consistent with the rest of this skill's repo-awareness.
+
 ## Grounding rules (anti-hallucination)
 
-These rules apply to every step of the workflow — planning, execution, review, and QA.
+The grounding rules are the spine of this skill — they apply to every step (planning, execution, review, QA) and get embedded into every generated prompt. They live in one canonical file so there is a single copy to keep correct: **`references/grounding-rules.md`**. Load it whenever shaping, reviewing, or generating prompts.
 
-### Read before reference
+In short:
 
-No agent may reference a file, function, contract, or pattern in any artifact unless it has read that file in the current session. If an agent cannot read the file (permissions, missing, etc.), it must say so instead of guessing the contents.
+- **Read before reference** — never name a file/function/contract you haven't read this session.
+- **Reachability before change** — a file existing isn't proof it's used; confirm it's reachable from a live entry point before planning edits to it (the dead look-alike passes every other check).
+- **Evidence over assertion** — show the command and its output; "tests pass" is not evidence.
+- **Build green is not "works"** — user-facing changes need a runtime check across reset/empty/failure paths, not just a passing build.
+- **Independent verification** — reviewer/QA re-derive claims from the code and real output; they never trust the execution agent's self-report.
+- **Plan grounding** — every file in the plan's scope must be real and live; validate file-scope against the import graph before execution.
 
-- Do not fabricate file paths. If you are unsure whether a file exists, check first.
-- Do not invent API contracts, function signatures, or config shapes. Read the source.
-- Do not describe code structure from memory or training data. Read the actual repo.
-
-### Reachability before change (liveness check)
-
-A file existing is NOT proof it is used. Before any artifact plans changes to a target file, verify it is actually reachable from a live entry point — a route, a registered controller/module, `main`, an exported public API, or something transitively imported by one. A file can compile, type-check, and look central while being dead code that nothing renders or calls.
-
-- UI change: confirm the component is mounted on a route (or imported by something that is). Grep for importers and trace up to a router/entry. Two similarly-named components (`Foo` vs `redesign/Foo`, `OrdersPanel` vs `OrdersPage`) is a classic trap — confirm which one the running app actually uses.
-- Backend change: confirm the handler/service is wired into a registered module/route, not an orphaned file.
-- Zero importers and not itself an entry point ⇒ treat as dead: flag it, do not plan changes against it.
-- "Read before reference" stops you inventing files; this rule stops you editing the wrong *real* file. Both are required — the second is the one that silently wastes a whole phase, because the dead file passes every other grounding check.
-
-### Evidence over assertion
-
-No agent may claim a task is complete, a test passes, or a verification succeeds without showing the actual output.
-
-- "All tests pass" is not acceptable. Show the command and its output.
-- "File updated" is not acceptable. Show the diff or the relevant section.
-- "No regressions" is not acceptable. Show what was checked and the result.
-
-Progress file updates must include evidence references (command run, output summary) not just status changes.
-
-### Build green is not "works" (runtime verification)
-
-A passing build, type-check, lint, and unit-test run prove the code COMPILES and that covered logic holds. They do not prove the change behaves correctly in the running system. Many real defects — layout/positioning, event races, state that only updates on a second interaction, a control wired to the wrong handler, a query that returns the wrong page, a filter that never fires — are invisible to static checks and surface only at runtime.
-
-- For any user-facing or integration change, require a RUNTIME check: exercise the actual path (drive the UI, hit the endpoint, run the migration against a real DB) and observe the result — not just "it builds".
-- Cover the destructive/reset/empty paths, not only the happy path: apply a filter AND clear it; open AND close; first page AND page N; the success case AND the failure case.
-- If runtime verification is blocked (no browser, no environment), say so explicitly and treat the runtime check as an OPEN gap — never let "build passes" stand in for "works".
-
-### Independent verification
-
-Reviewer and QA agents must independently verify claims. They must not trust the execution agent's self-report.
-
-- Reviewer must read the actual changed files, not just the execution agent's summary of what changed.
-- QA must run or inspect verification commands independently, not accept "I ran the tests and they passed" from the execution agent.
-- If a reviewer or QA agent cannot independently verify a claim (e.g., no access to run tests), it must flag that as a gap, not approve based on the execution agent's word.
-
-### Plan grounding
-
-Plans and task files must reference real, verified repo structures:
-
-- File paths in plans must come from actual repo inspection, not assumed project layouts.
-- **Every file in the plan's scope must be live** — reachable from an entry point (see "Reachability before change"). Validate the plan's file-scope against the live import graph BEFORE execution: a plan that targets dead code passes every other grounding check and still burns the entire phase. A wrong file-scope propagates silently from brief → plan → tasks → execution; catch it at the plan, not at review.
-- Design decisions must reference actual code patterns found in the repo, not generic best practices.
-- If the plan assumes a pattern exists (e.g., "the existing middleware chain"), the agent must verify it exists before writing it into the plan.
-
-### Hallucination red flags
-
-When reviewing any agent output, flag these as potential hallucination:
-
-- File paths that were not verified to exist
-- Function or class names that don't appear in the repo
-- Claims about code behavior without file:line references
-- Verification results without command output
-- "I confirmed..." without showing what was confirmed
-- References to patterns, libraries, or frameworks not present in the project
-- A target file that exists but was never confirmed reachable from an entry point (dead-code risk — see "Reachability before change")
-- "Build / tests / lint pass" offered as proof that a user-facing change *works*, with no runtime check of the actual behavior
+See `references/grounding-rules.md` for the full rules, the hallucination red-flag list, and the per-role emphasis to embed into execution/reviewer/QA prompts.
 
 ## Challenge standard
 
@@ -398,21 +347,13 @@ This skill is reusable across projects, but it must always absorb project constr
 
 Treat project rules as an overlay on top of the reusable workflow.
 
-For major changes, especially topology or app-boundary changes, treat source-of-truth doc updates as first-class work. Do not assume only `PROJECT_CONTEXT.md` needs updates.
+For major changes, especially topology or app-boundary changes, treat source-of-truth doc updates as first-class work. Update every affected context/source-of-truth doc the repo maintains (e.g. `AGENTS.md`, a project-context doc, app-level docs, READMEs) — do not assume a single context file is the only one that needs updating.
 
-## Execution orchestration
+## Execution
 
-When the user asks to start execution, the main agent acts as orchestrator:
+When the user asks to start execution, the main agent acts as orchestrator: it drives gated execution one phase at a time (execution → reviewer → QA → advance only when both approve) and handles crash/stall/blocker recovery. The orchestrator coordinates and enforces gates; it does not do execution work itself.
 
-1. Load any user-available orchestration skills for coordinating sub-agents.
-2. Use the generated prompts artifact as the source of truth for sub-agent instructions.
-3. Pass the execution prompt to the execution sub-agent.
-4. After each phase completion, pass the reviewer prompt to the reviewer sub-agent with the completed phase scope.
-5. After reviewer approval, pass the QA prompt to the QA sub-agent with the completed phase scope.
-6. If either reviewer or QA rejects, pass findings back to the execution sub-agent for the same phase.
-7. Only advance the execution sub-agent to the next phase after both reviewer and QA approve.
-
-The orchestrator should not do execution work itself. Its job is coordination, sequencing, and gate enforcement.
+Load **`references/execution-orchestration.md`** for the full orchestrator steps, the progress/recovery rules, stall detection, and blocker escalation. Track state with `references/progress-template.md`.
 
 ### Single-agent fallback (no sub-agents)
 
@@ -432,58 +373,7 @@ Why this is weaker, and how to compensate: a single agent reviewing its own work
 
 This keeps the method's discipline (grounded, gated, runtime-verified) intact; it only gives up parallelism and true independence. It is strictly better than no review — and strictly weaker than separate agents. Use it when sub-agents are unavailable or the change does not justify their cost.
 
-## Execution recovery
-
-Execution agents may crash, time out, or lose context. The skill must support recovery at any point.
-
-### Progress tracking
-
-Maintain a progress file at `docs/plans/YYYY-MM-DD-<topic>-progress.md` that tracks:
-
-- current phase
-- last completed task (phase.task number)
-- verification status for the current phase
-- reviewer disposition (approved / rejected with findings)
-- QA disposition (approved / rejected with findings)
-- blockers encountered
-
-The execution agent must update this file after completing each task.
-
-### Recovery rule
-
-When an execution agent starts (or restarts), it must:
-
-1. Read the progress file.
-2. Identify the last completed task.
-3. Resume from the next incomplete task.
-4. Do not re-execute completed tasks unless the progress file indicates a rejection that requires rework.
-
-The execution prompt must include this recovery rule.
-
-### Stall recovery (agent came to rest mid-task)
-
-A subagent can stop mid-task without finishing and without hitting a real blocker — it "comes to rest" partway, often leaving the work half-applied (e.g. a type was changed but its call-sites were not yet updated, sometimes leaving the build still green). This is distinct from both a completion and a blocker, and the orchestrator must actively detect it: a final report that trails off mid-action ("Now I'll update X…"), an unexpectedly low step count, or a progress file that still shows the task incomplete.
-
-When it happens:
-
-1. Do NOT assume the task is done because the agent stopped. Inspect the actual repo state (read the touched files, run the build) to learn exactly how far it got.
-2. Dispatch a finisher with the precise remaining delta — what is already applied vs. what is left — so it neither redoes completed work nor re-investigates from scratch.
-3. Keep the code in a compiling state across the boundary; if a partial edit left it broken, the finisher's first job is to restore a buildable state.
-
-Mitigate stalls up front: size tasks so each is completable in one focused pass; make the execution prompt insist on meeting the phase's exit criteria before stopping; prefer fewer larger-context agents over many tiny hand-offs for sequential work.
-
-### Blocker escalation
-
-A blocker means a missing decision, broken environment, or contradiction in the approved artifacts that cannot be safely resolved from repo context.
-
-When a blocker is hit:
-
-1. Record it in the progress file.
-2. Stop execution on the blocked task.
-3. Continue with non-blocked tasks in the same phase if any are independent.
-4. Escalate to the human only when no further progress is possible.
-
-The goal is to minimize human interaction during execution. Sub-agents should resolve ambiguity from the artifacts and repo context. Only true blockers — missing decisions, broken environments, or artifact contradictions — should reach the human.
+Recovery, stall detection, and blocker escalation for the orchestrated path live in `references/execution-orchestration.md`.
 
 ## Skill goals
 
