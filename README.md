@@ -58,6 +58,18 @@ Gated multi-agent execution is powerful but expensive. Pick a mode up front:
 
 `change-delivery` is a standard **Agent Skill** — a folder with [`SKILL.md`](SKILL.md) (frontmatter `name` + `description`) and a [`references/`](references/) directory. It's plain markdown; drop it where your agent discovers skills.
 
+### Recommended: the `skills` CLI (one command, every harness)
+
+```bash
+npx skills add KhalifaGad/change-delivery
+```
+
+This installs the whole skill — `SKILL.md` **and** `references/` — as a universal skill that works across Claude Code, Codex, Cursor, Cline, Gemini CLI, Amp, and more. It auto-detects your agent and installs non-interactively. By default it installs **project-local** (under `.agents/skills/` in the current directory); run it where you want the skill scoped, or use the CLI's global option for an all-projects install.
+
+### Manual (git clone)
+
+If you'd rather drop the folder in directly:
+
 **Claude Code**
 ```bash
 # user-level (all projects)
