@@ -4,7 +4,7 @@
 npx skills add KhalifaGad/change-delivery
 ```
 
-**An agent skill for landing large or refactor changes reliably — it shapes the brief, plans the phases, and drives execution through independent review/QA gates, so an agent can't quietly ship broken or half-applied work.**
+**An agent skill for landing large or refactor changes reliably — it interrogates the change into a sharp brief, plans the phases, and drives execution through independent review/QA gates, so an agent can't plan the wrong thing or quietly ship broken work.**
 
 `change-delivery` is a methodology, not a wrapper. It takes a business change, a technical change, or a refactor and drives it through a disciplined pipeline: a shaped **brief**, a brownfield **implementation plan**, an execution **task breakdown**, and **execution / reviewer / QA prompts** — then runs the work in **gated phases** where an independent reviewer and QA must approve before advancing.
 
@@ -14,8 +14,9 @@ It exists for the changes that are too big to one-shot: multi-phase refactors, m
 
 ## Why it's different
 
-Most "AI dev workflow" prompts help you *plan*. change-delivery is built to *land the change* — and the reason you can trust it to is **adversarial verification** and **anti-hallucination grounding** baked into every phase:
+Most "AI dev workflow" prompts help you *plan*. change-delivery is built to *land the change* — and it brackets the risky middle with adversarial checks at **both ends**: it pressures your brief *before* it plans, and it verifies the work *before* it ships.
 
+- **It interrogates the change before it plans.** Most tools take your prompt at face value. change-delivery treats the change request as a draft to pressure: it inspects the repo to learn what *this* codebase treats as cross-cutting and high-risk, challenges vague goals and missing invariants, and asks the focused questions you didn't think to answer — refusing to advance until the brief is actually strong. Half of shipping the wrong thing is *planning* the wrong thing; this is the gate that catches it first.
 - **Separation of roles.** The agent that writes the code never reviews or QAs it. A fresh, independent agent re-reads the change cold and tries to break it. Independence is the bug-catching mechanism — self-review rubber-stamps.
 - **Grounding rules.** Read before reference, evidence over assertion, and two rules learned the hard way:
   - **Reachability before change** — a file existing isn't proof it's *used*. Confirm the target is reachable from a route/entry point before editing it. (Editing a dead look-alike file compiles, reviews fine on its own terms, and ships nothing.)
