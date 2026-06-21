@@ -32,6 +32,55 @@ Every one of those passes a green build. None survived an independent review + r
 
 ---
 
+## How it works
+
+A change request is classified, shaped into artifacts, then driven through **gated execution** — where the agent that writes the code never approves it. An independent reviewer and an independent QA agent each try to break the work, and a phase advances only when **both** pass:
+
+```mermaid
+flowchart TD
+    A([Change request]) --> B{Classify:<br/>business · technical · refactor}
+    B --> C[Brief<br/><i>goal · non-goals · invariants</i>]
+    C -. tighten until strong .-> C
+    C --> D[Plan<br/><i>phased · file-scoped</i>]
+    D --> E[Tasks<br/><i>small · gated units</i>]
+    E --> F[Prompts<br/><i>execution · reviewer · QA</i>]
+    F --> H
+
+    subgraph G [Gated execution — per phase]
+        direction TB
+        H[🔨 Execution agent<br/>implement + verify] --> I[🔍 Reviewer agent<br/>independent cold read<br/>reachability · contracts]
+        H --> J[🧪 QA agent<br/>runtime check<br/>reset / empty / failure paths]
+        I --> K{Both<br/>approve?}
+        J --> K
+        K -. reject: findings .-> H
+        K -- approve --> L[Advance phase]
+    end
+
+    L -. more phases .-> H
+    L --> M([✅ Change shipped])
+
+    P[(Progress file<br/><i>source of truth · recovery</i>)] -.-> H
+    H -.-> P
+```
+
+The forked arrows are the point: the execution agent's work goes to **two separate** verifiers, both must approve, and any rejection loops straight back. The progress file is the recovery spine — work survives a crash, stall, or hand-off.
+
+### Single-agent fallback
+
+No sub-agents in your harness? The same gates run **sequentially in one agent that changes hats** — implement, then re-read cold as a reviewer, then exercise it at runtime as QA. Independence is *simulated* by re-deriving every claim from freshly re-read code and real output rather than memory, so it's weaker than true separate agents — but it still catches what build-green hides:
+
+```mermaid
+flowchart LR
+    A([Change request]) --> B[🔨 Implement<br/><i>read before write · edit the live file</i>]
+    B --> C[🔍 Reviewer hat<br/><i>re-read cold · re-derive claims</i>]
+    C --> D[🧪 QA hat<br/><i>run it · observe runtime</i>]
+    D --> E{Clean?}
+    E -. findings .-> B
+    E -- pass --> F([✅ Phase done])
+```
+
+---
+
 ## The artifacts
 
 The skill produces and maintains, in order:
