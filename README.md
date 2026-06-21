@@ -1,5 +1,9 @@
 # change-delivery
 
+```bash
+npx skills add KhalifaGad/change-delivery
+```
+
 **An agent skill that turns a change request into execution-ready delivery artifacts — and verifies the work adversarially as it ships.**
 
 `change-delivery` is a methodology, not a wrapper. It takes a business change, a technical change, or a refactor and drives it through a disciplined pipeline: a shaped **brief**, a brownfield **implementation plan**, an execution **task breakdown**, and **execution / reviewer / QA prompts** — then runs the work in **gated phases** where an independent reviewer and QA must approve before advancing.
