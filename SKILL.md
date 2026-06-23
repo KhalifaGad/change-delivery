@@ -39,6 +39,7 @@ Cost knobs that don't sacrifice the method:
 - Collapse reviewer+QA into one agent for a phase when risk is low.
 - Gate only the phases that carry real risk; let mechanical phases self-verify against the grounding rules.
 - Prefer fewer, larger-context agents over many tiny ones for sequential work — it also shrinks the mid-task-stall surface (see stall recovery in `references/execution-orchestration.md`).
+- **Cut cold re-discovery, not coverage.** The dominant hidden cost is every fresh agent re-reading large files and all artifacts from zero. Carry *facts* forward (a code map, pinned `file:line` anchors, the frozen contract) so agents verify instead of re-discover; scope rework and re-gates to the delta; reuse a warm environment; use targeted typecheck/test commands and reserve the full build+suite for the QA regression pass. None of this weakens the independent runtime verification — see "Context economy" and "Rework and re-gate" in `references/execution-orchestration.md`.
 
 Do not silently run Full mode on a change that warranted Lite — the user pays for it.
 
@@ -95,6 +96,8 @@ Many changes straddle two types (e.g., a business feature requiring a technical 
 - Pull the planning emphasis and failure modes from both into the plan.
 
 If the secondary type's concerns would materially change the plan shape, treat it as a first-class input, not an afterthought.
+
+For clearly-hybrid changes, don't over-invest in the type-reference ceremony: in practice the **project concern map** (derived from the repo below) usually shapes the plan more than the per-type reference files do. Load the refs for their failure-mode checklists, but let the concern map and repo grounding do the heavy lifting.
 
 Then load the relevant reference(s):
 
@@ -351,9 +354,9 @@ For major changes, especially topology or app-boundary changes, treat source-of-
 
 ## Execution
 
-When the user asks to start execution, the main agent acts as orchestrator: it drives gated execution one phase at a time (execution → reviewer → QA → advance only when both approve) and handles crash/stall/blocker recovery. The orchestrator coordinates and enforces gates; it does not do execution work itself.
+When the user asks to start execution, the main agent acts as orchestrator: it drives gated execution one phase at a time (execution → reviewer → QA → advance only when both approve) and handles crash/stall/blocker recovery. The orchestrator coordinates and enforces gates; it does not do execution work itself. Treat sub-agents as **one-shot** — each dispatch (initial, rework, gate) is a fresh agent that reconstructs context from the progress file + code map, so a rejection routes into a rework pass, not a message back to a live agent.
 
-Load **`references/execution-orchestration.md`** for the full orchestrator steps, the progress/recovery rules, stall detection, and blocker escalation. Track state with `references/progress-template.md`.
+Load **`references/execution-orchestration.md`** for the full orchestrator steps, the progress/recovery rules, stall detection, blocker escalation, and — to keep runs fast without weakening verification — **Context economy** (carry facts not conclusions; the code map; per-role reading lists; warm env), **delta-scoped rework/re-gate**, **contract amendments**, and **sanity-checking gate verdicts**. Track state with `references/progress-template.md`.
 
 ### Single-agent fallback (no sub-agents)
 

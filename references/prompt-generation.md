@@ -24,14 +24,16 @@ The execution prompt should include:
 
 - artifact paths
 - execution source of truth
+- **reading scope** — read the progress file's **code map** first, plus *this phase's* tasks and the frozen contract; read targeted file regions, not whole large files; do not re-read every artifact (see "Context economy" in `references/execution-orchestration.md`)
 - completion rule
 - phase progression rule
 - review / QA gate rule
 - repo-specific guardrails
 - blocker definition
+- **contract-amendment rule** — if a frozen contract proves inadequate, amend it explicitly and flag it; never silently diverge
 - recovery rule (read progress file, resume from last completed task)
-- progress tracking rule (update progress file after each task)
-- expected final report
+- progress tracking rule (update progress file + the code map after each task; log any `OPEN:` runtime gap to the Open-verification-gaps ledger)
+- expected final report (must drain the Open-verification-gaps ledger — every gap resolved or explicitly surfaced)
 
 Good execution prompts:
 
@@ -84,6 +86,10 @@ The QA prompt should include:
 - partial approval rule: same as reviewer — phase passes or fails as a whole
 - what to do with out-of-phase findings: log them but do not block the current phase
 - requirement for clear approval or required fixes
+
+## Re-gate scoping (on rework)
+
+The reviewer/QA prompts are written for a full phase, but when they run as a **re-gate** after rework, the orchestrator scopes them to the delta: verify the fix, re-run the previously-failing check, the build/typecheck, and the runtime check **for the affected surface** plus a regression smoke — not a full re-verification of surfaces that already passed earlier in the same phase. This is a redundancy cut, not a coverage cut. See "Rework and re-gate" in `references/execution-orchestration.md`.
 
 ## Grounding rules for all prompts
 

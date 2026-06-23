@@ -96,6 +96,8 @@ Every verification step in a tasks file must be concrete enough that an agent ca
 - Good: `run npm test -- --filter=auth` / `verify 200 response from GET /api/users`
 - Bad: `verify it works` / `check everything is fine` / `confirm no regressions`
 
+Prefer the **cheapest command that yields the signal** — a targeted typecheck (e.g. `tsc --noEmit`) or a single test pattern over a full production build or the whole suite. Reserve the full build + full test suite for the **QA regression pass**, where breadth is the point. This trims redundant cost without weakening the runtime verification the grounding rules require.
+
 When the execution agent completes a verification step, the progress file must include:
 
 - the exact command run
